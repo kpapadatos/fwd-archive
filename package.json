@@ -1,0 +1,33 @@
+{
+  "name": "fwd-archive",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/main.js",
+  "types": "dist/main.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "mocha -b --exit -r source-map-support/register --timeout 1000 dist/**/*.test.js",
+    "test-w": "concurrently npm:watch npm:mocha-w",
+    "mocha-w": "mocha -b --exit -r source-map-support/register --timeout 1000 --watch --watch-files dist/**/*.js dist/**/*.js",
+    "prepublish": "npm run build"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@angular-eslint/eslint-plugin": "^15.1.0",
+    "@types/chai": "^4.3.4",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^22.2.0",
+    "@typescript-eslint/eslint-plugin": "^5.47.0",
+    "@typescript-eslint/parser": "^5.47.0",
+    "chai": "^4.3.7",
+    "concurrently": "^7.6.0",
+    "eslint": "^8.30.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "mocha": "^10.7.3",
+    "source-map-support": "^0.5.21",
+    "typescript": "^5.5.4"
+  }
+}
