@@ -1,6 +1,6 @@
 {
   "name": "fwd-archive",
-  "version": "1.0.0",
+  "version": "1.0.q",
   "description": "",
   "main": "dist/main.js",
   "types": "dist/main.d.ts",
@@ -11,6 +11,9 @@
     "test-w": "concurrently npm:watch npm:mocha-w",
     "mocha-w": "mocha -b --exit -r source-map-support/register --timeout 1000 --watch --watch-files dist/**/*.js dist/**/*.js",
     "prepublish": "npm run build"
+  },
+  "bin": {
+    "unfwd": "unfwd.js"
   },
   "author": "",
   "license": "ISC",

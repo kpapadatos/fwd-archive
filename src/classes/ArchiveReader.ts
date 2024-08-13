@@ -38,16 +38,24 @@ export class ArchiveReader extends internal.Writable {
         const magicIndex = buffer.indexOf(MAGIC_BYTES);
 
         if (magicIndex === -1) {
-            if (final) {
-                if (buffer.byteLength > 0) {
-                    if (this.currentFile) {
-                        this.currentFile.write(buffer);
-                        this.currentFile.end();
+            if (this.currentFile && buffer.byteLength > MAGIC_BYTES.byteLength) {
+                this.currentFile.write(buffer.subarray(0, buffer.byteLength - MAGIC_BYTES.byteLength));
+                const remainingDataWithPotentialMagicBytes = buffer.subarray(buffer.byteLength - MAGIC_BYTES.byteLength);
+                this.buffer = [remainingDataWithPotentialMagicBytes];
+            }
 
-                        this.buffer = [];
-                    } else {
-                        throw new Error('No current file even though data exist before end');
+            if (final) {
+                const buffer = Buffer.concat(this.buffer);
+
+                if (this.currentFile) {
+                    if (buffer.byteLength > 0) {
+                        this.currentFile.write(buffer);
                     }
+
+                    this.buffer = [];
+                    this.currentFile.end();
+                } else if (buffer.byteLength > 0) {
+                    throw new Error('No current file but have more data');
                 }
             }
 
