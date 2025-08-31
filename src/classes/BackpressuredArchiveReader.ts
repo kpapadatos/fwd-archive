@@ -9,11 +9,16 @@ export class BackpressuredArchiveReader extends internal.Writable {
     private readonly completeFiles: FileStream[] = [];
     private lastWriteCallback?: (error?: Error | null) => void | undefined;
     private nextFiles = defer<FileStream[] | null>();
-    public async getNextFileOrNull() {
-        this.lastWriteCallback?.();
+    public getNextFileOrNull() {
+        const currentPromise = this.nextFiles.promise;
+
+        const lastWriteCallback = this.lastWriteCallback;
+
         this.lastWriteCallback = undefined;
 
-        return await this.nextFiles.promise;
+        lastWriteCallback?.();
+
+        return currentPromise;
     }
     public _write(chunk: any, encoding: BufferEncoding, callback: (error?: Error | null) => void): void {
         this.buffer.push(chunk);
