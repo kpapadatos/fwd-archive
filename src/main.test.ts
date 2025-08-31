@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from 'crypto';
 import { once } from 'stream';
 import { pipeline } from 'stream/promises';
 import { ArchiveWriter } from './classes/ArchiveWriter';
+import { BackpressuredArchiveReader } from './classes/BackpressuredArchiveReader';
 import { FileStream } from './classes/FileStream';
 import { FILE_NAME_LENGTH_BYTES, MAGIC_BYTES } from './common/constants';
 import { ArchiveReader } from './main';
@@ -72,6 +73,70 @@ describe('ArchiveWriter', () => {
         });
 
         await pipeline(archiveFile, reader);
+
+        expect(fileStreams.length).to.equal(files.length);
+
+        for (const fileStream of fileStreams) {
+            const file = files.find(({ fileName }) => fileName === fileStream.fileName);
+            const fileStreamBuffer = fileStream.getBuffer();
+
+            expect(file).to.exist;
+            expect(fileStreamBuffer).to.deep.equal(file?.content);
+        }
+    });
+
+    it('should read file with backpressure', async () => {
+        const archive = new ArchiveWriter();
+        let archiveFileBuffer = Buffer.alloc(0);
+
+        archive.on('data', (chunk) => {
+            archiveFileBuffer = Buffer.concat([archiveFileBuffer, chunk]);
+        });
+
+        const files = [makeRandomFile(), makeRandomFile(), makeRandomFile()];
+
+        for (const { fileName, stream } of files) {
+            archive.addFile(fileName);
+
+            const pipe = pipeline(stream, archive, { end: false });
+
+            await pipe;
+        }
+
+        archive.end();
+
+        await once(archive, 'finish');
+
+        const reader = new BackpressuredArchiveReader();
+        const archiveFile = new FileStream('archive');
+
+        archiveFile.write(archiveFileBuffer);
+        archiveFile.end();
+
+        expect(archiveFile.getBuffer()).to.deep.equal(archiveFileBuffer);
+
+        const fileStreams: FileStream[] = [];
+
+        reader.getNextFileOrNull().then((fileStream) => {
+            if (fileStream) {
+                fileStreams.push(...fileStream);
+            }
+        });
+
+        await Promise.all([
+            pipeline(archiveFile, reader),
+            (async () => {
+                while (true) {
+                    const file = await reader.getNextFileOrNull();
+
+                    if (file) {
+                        fileStreams.push(...file);
+                    } else {
+                        break;
+                    }
+                }
+            })
+        ]);
 
         expect(fileStreams.length).to.equal(files.length);
 
