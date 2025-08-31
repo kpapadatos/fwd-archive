@@ -1,5 +1,8 @@
+import { sleep } from '@lunarade/xtools';
 import { expect } from 'chai';
 import { randomBytes, randomUUID } from 'crypto';
+import { createReadStream, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
 import { once } from 'stream';
 import { pipeline } from 'stream/promises';
 import { ArchiveWriter } from './classes/ArchiveWriter';
@@ -93,7 +96,7 @@ describe('ArchiveWriter', () => {
             archiveFileBuffer = Buffer.concat([archiveFileBuffer, chunk]);
         });
 
-        const files = [makeRandomFile(), makeRandomFile(), makeRandomFile()];
+        const files = Array.from({ length: 100 }, makeRandomFile);
 
         for (const { fileName, stream } of files) {
             archive.addFile(fileName);
@@ -117,25 +120,26 @@ describe('ArchiveWriter', () => {
 
         const fileStreams: FileStream[] = [];
 
-        reader.getNextFileOrNull().then((fileStream) => {
-            if (fileStream) {
-                fileStreams.push(...fileStream);
-            }
-        });
+        const fileName = randomUUID();
+
+        writeFileSync(tmpdir() + '/' + fileName, archiveFileBuffer);
 
         await Promise.all([
-            pipeline(archiveFile, reader),
+            pipeline(createReadStream(tmpdir() + '/' + fileName), reader),
             (async () => {
                 while (true) {
-                    const file = await reader.getNextFileOrNull();
+                    const files = await reader.getNextFileOrNull();
 
-                    if (file) {
-                        fileStreams.push(...file);
+                    if (files) {
+                        for (const file of files) {
+                            fileStreams.push(file);
+                            await sleep(1);
+                        }
                     } else {
                         break;
                     }
                 }
-            })
+            })()
         ]);
 
         expect(fileStreams.length).to.equal(files.length);
@@ -147,11 +151,11 @@ describe('ArchiveWriter', () => {
             expect(file).to.exist;
             expect(fileStreamBuffer).to.deep.equal(file?.content);
         }
-    });
+    }).timeout(20e3);
 
     function makeRandomFile() {
         const fileName = randomUUID();
-        const content = randomBytes(1024);
+        const content = randomBytes(1024 * 10);
         const stream = new FileStream(fileName);
 
         let index = 0;

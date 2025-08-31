@@ -24,13 +24,14 @@ export class BackpressuredArchiveReader extends internal.Writable {
         this.buffer.push(chunk);
 
         this.checkBuffer();
-        this.resolveNextFilePromiseIfNeeded();
 
         if (this.completeFiles.length === 0) {
             callback();
         } else {
             this.lastWriteCallback = callback;
         }
+
+        this.resolveNextFilePromiseIfNeeded();
     }
     public _final(callback: (error?: Error | null) => void): void {
         this.checkBuffer(true);

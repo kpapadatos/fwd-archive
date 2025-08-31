@@ -1,13 +1,13 @@
 {
   "name": "fwd-archive",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "",
   "main": "dist/main.js",
   "types": "dist/main.d.ts",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "test": "mocha -b --exit -r source-map-support/register --timeout 1000 dist/**/*.test.js",
+    "test": "mocha -b --exit --no-warnings -r source-map-support/register --timeout 1000 dist/**/*.test.js",
     "test-w": "concurrently npm:watch npm:mocha-w",
     "mocha-w": "mocha -b --exit -r source-map-support/register --timeout 1000 --watch --watch-files dist/**/*.js dist/**/*.js",
     "prepublish": "npm run build"
